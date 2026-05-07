@@ -3,40 +3,50 @@ Configuration of the project.
 """
 
 from dataclasses import dataclass
-
-import torch
-
-
-@dataclass
-class ModelConfig:
-    """
-    Class to define the configuration of the model.
-    """
-
-    in_dim = 3
-    out_dim = 1
+from enum import IntEnum
+from itertools import product
+from pathlib import Path
+from typing import TypeAlias, cast, get_args
 
 
-@dataclass
-class TrainingConfig:
-    """
-    Class to define the configuration of the training.
-    """
+class Cell(IntEnum):
+    """Class to define the possible values of a cell."""
 
-    epochs = 10
-    batch_size = 64
-    lr = 1e-3
-    optimizer = torch.optim.Adam
+    GREY = 0
+    YELLOW = 1
+    GREEN = 2
+
+
+Vector: TypeAlias = tuple[Cell, Cell, Cell, Cell, Cell]
+n_letters = len(get_args(Vector))
 
 
 @dataclass
+class PathsConfig:
+    """Paths configuration class."""
+
+    possible_words: Path = Path("data/possible_words.txt")
+    initial_guess: Path = Path("data/initial_guess.json")
+    all_games: Path = Path("data/all_games.json")
+    histogram: Path = Path("data/histogram.png")
+    boxplot: Path = Path("data/boxplot.png")
+
+
 class Config:
     """
     Main configuration class.
     """
 
-    model = ModelConfig()
-    training = TrainingConfig()
+    paths = PathsConfig()
+    n_letters = n_letters
+    all_vectors: list[Vector] = [
+        cast(Vector, combination)
+        for combination in product(
+            [Cell.GREY, Cell.YELLOW, Cell.GREEN], repeat=n_letters
+        )
+    ]
+    with open(paths.possible_words, "r", encoding="utf-8") as f:
+        possible_words = [line.strip() for line in f]
 
 
 config = Config()

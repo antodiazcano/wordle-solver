@@ -1,119 +1,144 @@
-<!--
-BADGES (ONLY FOR PUBLIC REPOS)
-<p align="center">
-<a href="https://github.com/antodiazcano/template-project/actions/workflows/ci.yml">
-  <img src="https://github.com/antodiazcano/template-project/actions/workflows/ci.yml/badge.svg" alt="CI">
-</a>
-  <img src="https://img.shields.io/badge/python-3.10%20|%203.11%20|%203.12%20|%203.13-blue">
-  <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
-</p>
--->
+# 🟩 Wordle Solver
 
-# template-project
+A Wordle solver based on **Information Theory**, inspired by [this video](https://www.youtube.com/watch?v=v68zYyaEmEA) from 3Blue1Brown. At each turn, the solver picks the word that maximizes the expected information gain (Shannon entropy), narrowing down the list of possible words as fast as possible.
 
-## What to do at first
+## The math behind it
 
-First, create the virtual environment (the ".venv" part is to use that name for the virtual environment, but you can choose what you want):
+### Information and entropy
 
-    uv venv .venv
+When we make a guess in Wordle, the game responds with a color pattern (vector). Each pattern gives us **information** — it eliminates some words from the list of possibilities. The amount of information gained from observing a pattern $v$ with probability $p(v | \text{guess})$ is:
 
-(Optional) If you want to select the Python version in the virtual environment:
+$$I(v, \text{guess}) = \log_2\left(\frac{1}{p(v | \text{guess})}\right) = -\log_2(p(v | \text{guess}))$$
 
-    uv python pin 3.13.1
-    uv python install 3.13.1
-    uv venv --python 3.13.1
+The rarer the pattern, the more information it carries. If a pattern eliminates 99% of words, it's very informative.
 
-Then, activate it:
+The **entropy** of a guess is the expected information over all possible patterns:
 
-    source .venv/bin/activate
+$$ H(\text{guess}) = \sum_{v \in \mathcal{V}} p(v | \text{guess}) \cdot I(v, \text{guess}) = -\sum_{v \in \mathcal{V}} p(v | \text{guess}) \cdot \log_2(p(v | \text{guess})), $$
 
-Use ```Ctrl``` + ```Shift``` + ```p``` to select the interpreter and run
+where $\mathcal{V}$ is the set of all $3^5 = 243$ possible color patterns, and $p(v | \text{guess})$ is the fraction of remaining words that would produce pattern $v$ if we play that guess.
 
-    uv sync
+### Example
 
-to install the predefined packages.
+Suppose there are 100 possible words remaining and we guess a word. If the resulting pattern matches 50 of those words, then $p = 50/100 = 0.5$ and the information gained is:
 
-Finally, change "name" and "description" in the ```pyproject.toml```.
+$$I = -\log_2(0.5) = 1 \text{ bit}$$
 
-## Dealing with dependencies
+But if the pattern only matches 3 words out of 100, then $p = 3/100 = 0.03$ and:
 
-To add a package, just execute:
+$$I = -\log_2(0.03) \approx 5.06 \text{ bits}$$
 
-    uv add package
+The rarer the pattern, the more it narrows down the possibilities.
 
-To remove a package, just execute:
+Now consider two guesses with 100 remaining words:
 
-    uv remove package
+- **Guess A** produces 2 patterns: one matching 90 words and another matching 10 words.
 
-Each time a new package is installed/removed it is automatically reflected in the ```pyproject.toml```.
+$$H(A) = -\frac{90}{100} \cdot \log_2\left(\frac{90}{100}\right) - \frac{10}{100} \cdot \log_2\left(\frac{10}{100}\right) \approx 0.47 \text{ bits}$$
 
-If we want just a group of dependencies you can do:
+- **Guess B** produces 3 patterns: matching 50, 30, and 20 words respectively.
 
-    uv sync --group <name of the group>
+$$H(B) = -\frac{50}{100} \cdot \log_2\left(\frac{50}{100}\right) - \frac{30}{100} \cdot \log_2\left(\frac{30}{100}\right) - \frac{20}{100} \cdot \log_2\left(\frac{20}{100}\right) \approx 1.49 \text{ bits}$$
 
-To include a dependency in a group, you can do:
+Guess B has higher entropy because it splits the possibilities into more, smaller groups — on average we learn more per turn.
 
-    uv add package --group
+### Algorithm
 
-You can ignore Pylint, Mypy or any other package rules in the ```pyproject.toml```.
+1. For each candidate word, compute its entropy over all 243 possible patterns.
+2. Pick the word with the highest entropy — it's the one that, on average, eliminates the most possibilities.
+3. After observing the result, filter the remaining words and repeat.
 
-## Saving Tokens with LLMs
+A word with high entropy splits the remaining possibilities into many small, roughly equal groups. A word with low entropy leaves large groups intact, giving us little new information.
 
-- Use [rtk](https://github.com/rtk-ai/rtk):
+### Color encoding
 
-        # 1. Install for your AI tool
-        rtk init -g                     # Claude Code / Copilot (default)
-        rtk init -g --gemini            # Gemini CLI
-        rtk init -g --codex             # Codex (OpenAI)
-        rtk init -g --agent cursor      # Cursor
-        rtk init --agent windsurf       # Windsurf
-        rtk init --agent cline          # Cline / Roo Code
-        rtk init --agent kilocode       # Kilo Code
-        rtk init --agent antigravity    # Google Antigravity
-        
-        # 2. Restart your AI tool, then test
-        git status  # Automatically rewritten to rtk git status
+Each position in the response vector takes one of three values:
+- ⬜ Grey (0): letter not in the word.
+- 🟨 Yellow (1): letter in the word but wrong position.
+- 🟩 Green (2): letter in the correct position.
 
-- Use [Caveman mode](https://github.com/om-patel5/Caveman-Claude).
+## Installation
 
-- Use lightweight models for some specific tasks like context compression. This [video](https://www.youtube.com/watch?v=NoF-YajElIM) explains it.
+```bash
+uv venv .venv
+source .venv/bin/activate
+uv sync
+```
 
-## Sanity Checks
+## Usage
 
-With the ```Makefile``` you can use
+### Play a real game
 
-    make install
+The solver suggests words interactively. After each guess, input the result as a 5-digit string (e.g., `01020`):
 
-to install the dependencies,
+```bash
+python -m src.wordle
+```
 
-    make format
+### Simulate a game
 
-to run Black and format the code,
+```python
+from src.wordle import Wordle
 
-    make lint
+model = Wordle()
+attempts = model.simulate_game("crane")
+print(f"Solved in {attempts} attempts")
+```
 
-to check the code with Ruff, Bandit, Mypy, Flake8, Complexipy and Pylint,
+### Find the best initial guess
 
-    make test
-    
-to run the tests,
+Computes the entropy for every word to find the optimal first guess:
 
-    make clean
+```bash
+python -m src.simulations.best_initial_guess
+```
 
-to delete "trash" directories like ```__pycache__``` and
+### Simulate all games
 
-    make all
+Runs the solver against every possible word and generates statistics:
 
-to run install, format, lint, test and clean sequentially with just one command.
+```bash
+python -m src.simulations.all_games
+```
 
-By default, Pylint only fails under a mark of 8 and no complete coverage is required, but it is a good practice to check periodically if a 10/10 mark is achieved in Pylint and a 100% test coverage is achieved in coverage. To see what lines are not covered, just execute
+This produces:
+- `data/all_games.json` — attempts per word.
+- `data/histogram.png` — distribution of attempts.
+- `data/boxplot.png` — boxplot of attempts.
 
-    pytest --cov-report term-missing
+## Results
 
-and they will be shown.
+After simulating all possible games (2315), the solver resolves them with a mean of **3.60 attempts** and a standard deviation of **0.85 attempts**.
 
-## Others
+| Attempts to win | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|---|---|---|---|---|---|---|---|---|
+| Number of times | 1 | 131 | 999 | 919 | 207 | 47 | 9 | 2 |
 
-To see the documentation run:
+## Sequence diagram
 
-    mkdocs serve
+```mermaid
+sequenceDiagram
+    participant User
+    participant Wordle
+
+    User->>Wordle: play_game(first_guess)
+    Wordle->>User: suggest first_guess
+    User->>Wordle: input vector (e.g. "01020")
+    Wordle->>Wordle: _reduce_possible_words(guess, vector)
+
+    loop Until word is guessed
+        Wordle->>Wordle: _choose_word()
+        loop For each candidate word
+            Wordle->>Wordle: get_entropy_of_word(word)
+            loop For each of 243 vectors
+                Wordle->>Wordle: _get_probability_of_vector(word, v)
+                Wordle->>Wordle: _calculate_vector(word, candidate)
+            end
+        end
+        Wordle->>User: suggest best word
+        User->>Wordle: input vector
+        Wordle->>Wordle: _reduce_possible_words(guess, vector)
+    end
+
+    Wordle->>User: Congratulations!
+```
