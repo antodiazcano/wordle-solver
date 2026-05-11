@@ -30,17 +30,19 @@ $$I = -\log_2(0.03) \approx 5.06 \text{ bits}$$
 
 The rarer the pattern, the more it narrows down the possibilities.
 
-Now consider two guesses with 100 remaining words:
+Now consider two guesses ("hello" and "raise") with 100 remaining words:
 
-- **Guess A** produces 2 patterns: one matching 90 words and another matching 10 words.
+- **Guess "hello"** produces 2 patterns: one matching 90 words and another matching 10 words.
 
-$$H(A) = -\frac{90}{100} \cdot \log_2\left(\frac{90}{100}\right) - \frac{10}{100} \cdot \log_2\left(\frac{10}{100}\right) \approx 0.47 \text{ bits}$$
+$$H(\text{hello}) = -\frac{90}{100} \cdot \log_2\left(\frac{90}{100}\right) - \frac{10}{100} \cdot \log_2\left(\frac{10}{100}\right) \approx 0.47 \text{ bits}$$
 
-- **Guess B** produces 3 patterns: matching 50, 30, and 20 words respectively.
+- **Guess "raise"** produces 3 patterns: matching 50, 30, and 20 words respectively.
 
-$$H(B) = -\frac{50}{100} \cdot \log_2\left(\frac{50}{100}\right) - \frac{30}{100} \cdot \log_2\left(\frac{30}{100}\right) - \frac{20}{100} \cdot \log_2\left(\frac{20}{100}\right) \approx 1.49 \text{ bits}$$
+$$H(\text{raise}) = -\frac{50}{100} \cdot \log_2\left(\frac{50}{100}\right) - \frac{30}{100} \cdot \log_2\left(\frac{30}{100}\right) - \frac{20}{100} \cdot \log_2\left(\frac{20}{100}\right) \approx 1.49 \text{ bits}$$
 
-Guess B has higher entropy because it splits the possibilities into more, smaller groups — on average we learn more per turn.
+Guess "raise" has higher entropy because it splits the possibilities into more, smaller groups — on average we learn more per turn. The best case would be if we introduce "hello" and end up with the $10\%$ of the words. However, in mean, it's better to introduce "raise", as we will probably end up with a smaller group.
+
+![](data/graphical_example.png)
 
 ### Algorithm
 
@@ -113,6 +115,9 @@ After simulating all possible games (2315), the solver resolves them with a mean
 | Attempts to win | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
 |---|---|---|---|---|---|---|---|---|
 | Number of times | 1 | 131 | 999 | 919 | 207 | 47 | 9 | 2 |
+
+![](data/histogram.png)
+![](data/boxplot.png)
 
 ## Sequence diagram
 
