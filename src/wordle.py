@@ -1,6 +1,4 @@
-"""
-Script to play Wodle using Information Theory.
-"""
+"""Script to play Wodle using Information Theory."""
 
 from typing import cast
 

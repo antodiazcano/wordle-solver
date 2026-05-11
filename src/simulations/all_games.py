@@ -1,6 +1,4 @@
-"""
-Script to simulate all possible games and in how many attempts we would win them.
-"""
+"""Script to simulate all possible games and in how many attempts we would win them."""
 
 import json
 

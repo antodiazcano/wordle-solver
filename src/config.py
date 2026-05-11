@@ -1,6 +1,4 @@
-"""
-Configuration of the project.
-"""
+"""Configuration of the project."""
 
 from dataclasses import dataclass
 from enum import IntEnum
