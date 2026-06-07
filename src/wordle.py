@@ -1,4 +1,4 @@
-"""Script to play Wodle using Information Theory."""
+"""Script to play Wordle using Information Theory."""
 
 from typing import cast
 
@@ -107,15 +107,15 @@ class Wordle:
         """
 
         max_entropy = -1.0  # it would be valid any number < 0 as entropy is always >= 0
-        choosen_word = self.possible_words[0]
+        chosen_word = self.possible_words[0]
 
         for word in self.possible_words:
             word_entropy = self.get_entropy_of_word(word)
             if word_entropy > max_entropy:
                 max_entropy = word_entropy
-                choosen_word = word
+                chosen_word = word
 
-        return choosen_word
+        return chosen_word
 
     def simulate_game(self, real_word: str, first_guess: str = "raise") -> int:
         """Plays automatically a game.
