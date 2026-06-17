@@ -30,6 +30,7 @@ class PathsConfig:
     boxplot: Path = Path("data/boxplot.png")
 
 
+@dataclass
 class Config:
     """
     Main configuration class.
